@@ -54,6 +54,17 @@ function initializeServiceWorker() {
   // B5. TODO - In the event that the service worker registration fails, console
   //            log that it has failed.
   // STEPS B6 ONWARDS WILL BE IN /sw.js
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then((registration) => {
+          console.log('ServiceWorker registration successful:', registration);
+        })
+        .catch((err) => {
+          console.log('ServiceWorker registration failed:', err);
+        });
+    });
+  }
 }
 
 /**
@@ -69,15 +80,35 @@ async function getRecipes() {
   // A1. TODO - Check local storage to see if there are any recipes.
   //            If there are recipes, return them.
   /**************************/
+  const stored = localStorage.getItem('recipes');
+  if (stored) return JSON.parse(stored);
   // The rest of this method will be concerned with requesting the recipes
   // from the network
   // A2. TODO - Create an empty array to hold the recipes that you will fetch
+  const recipes = [];
+
   // A3. TODO - Return a new Promise. If you are unfamiliar with promises, MDN
   //            has a great article on them. A promise takes one parameter - A
   //            function (we call these callback functions). That function will
   //            take two parameters - resolve, and reject. These are functions
   //            you can call to either resolve the Promise or Reject it.
   /**************************/
+  return new Promise((resolve, reject) => {
+    RECIPE_URLS.forEach(async (url) => {
+      try {
+        const response = await fetch(url);
+        const recipe = await response.json();
+        recipes.push(recipe);
+        if (recipes.length === RECIPE_URLS.length) {
+          saveRecipesToStorage(recipes);
+          resolve(recipes);
+        }
+      } catch (error) {
+        console.error(err);
+        reject(error);
+      }
+    });
+  });
   // A4-A11 will all be *inside* the callback function we passed to the Promise
   // we're returning
   /**************************/
